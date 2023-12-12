@@ -268,7 +268,7 @@ def get_hparams(init=True):
     return hparams
 
 
-def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_time=True):
+def clean_checkpoints(path_to_models='OUTPUT_MODEL/44k/', n_ckpts_to_keep=2, sort_by_time=True):
     """Freeing up space by deleting saved ckpts
 
     Arguments:
@@ -279,30 +279,25 @@ def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_tim
     """
     import re
 
-    ckpts_files = [
-        f
-        for f in os.listdir(path_to_models)
-        if os.path.isfile(os.path.join(path_to_models, f))
-    ]
+    ckpts_files = [f for f in os.listdir(path_to_models) if os.path.isfile(os.path.join(path_to_models, f))]
 
-    def name_key(_f):
-        return int(re.compile("._(\\d+)\\.pth").match(_f).group(1))
-
-    def time_key(_f):
-        return os.path.getmtime(os.path.join(path_to_models, _f))
-
+    name_key = lambda _f: int(re.compile('._(\d+)\.pth').match(_f).group(1))
+    time_key = lambda _f: os.path.getmtime(os.path.join(path_to_models, _f))
     sort_key = time_key if sort_by_time else name_key
 
-    def x_sorted(_x):
-        return sorted(
-            [f for f in ckpts_files if f.startswith(_x) and not f.endswith("_0.pth")],
-            key=sort_key,
-        )
-
-    to_del = [
-        os.path.join(path_to_models, fn)
-        for fn in (x_sorted("G")[:-n_ckpts_to_keep] + x_sorted("D")[:-n_ckpts_to_keep])
+    exclude_files = [
+        'G_5000.pth','G_10000.pth', 'G_15000.pth','G_20000.pth', 'G_25000.pth','G_30000.pth','G_35000.pth', 'G_40000.pth', 'G_45000.pth' ,'G_50000.pth','G_55000.pth','G_60000.pth','G_65000.pth',
+        'G_70000.pth','G_75000.pth', 'G_80000.pth', 'G_85000.pth','G_90000.pth','G_95000.pth', 'G_100000.pth', 'G_105000.pth', 'G_110000.pth', 'G_115000.pth' ,'G_120000.pth','G_125000.pth',
+        'G_130000.pth', 'G_135000.pth','G_140000.pth','G_145000.pth', 'G_160000.pth', 'G_165000.pth', 'G_170000.pth', 'G_175000.pth','G_180000.pth', 'G_185000.pth','G_190000.pth','G_195000.pth',
+        'G_200000.pth','G_205000.pth', 'G_210000.pth', 'G_215000.pth', 'G_220000.pth', 'G_225000.pth'
     ]
+
+    x_sorted = lambda _x: sorted([f for f in ckpts_files if f.startswith(_x) and not f.endswith('_0.pth') and f not in exclude_files],
+                                 key=sort_key)
+
+    print("当前文件：", x_sorted('G'))  # Print the sorted 'G' model files
+    to_del = [os.path.join(path_to_models, fn) for fn in
+              (x_sorted('G')[:-n_ckpts_to_keep] + x_sorted('D')[:-n_ckpts_to_keep])]
 
     def del_info(fn):
         return logger.info(f".. Free up space by deleting ckpt {fn}")
@@ -310,7 +305,7 @@ def clean_checkpoints(path_to_models="logs/44k/", n_ckpts_to_keep=2, sort_by_tim
     def del_routine(x):
         return [os.remove(x), del_info(x)]
 
-    [del_routine(fn) for fn in to_del]
+    rs = [del_routine(fn) for fn in to_del]
 
 
 def get_hparams_from_dir(model_dir):
